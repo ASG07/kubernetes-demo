@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: laravel-storage-pvc
+  namespace: laravel-app
+  labels:
+    app: laravel-app
+    tier: frontend
+spec:
+  accessModes:
+  - ReadWriteMany  # Multiple pods need to access storage
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard  # Adjust based on your cluster's storage classes

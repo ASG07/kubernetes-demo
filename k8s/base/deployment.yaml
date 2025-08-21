@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: laravel-app
+  namespace: laravel-app
+  labels:
+    app: laravel-app
+    tier: frontend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: laravel-app
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: laravel-app
+        tier: frontend
+    spec:
+      initContainers:
+      - name: migration
+        image: your-registry/laravel-app:latest  # Replace with your image
+        command: ['php', 'artisan', 'migrate', '--force']
+        envFrom:
+        - configMapRef:
+            name: laravel-config
+        - secretRef:
+            name: laravel-secrets
+        volumeMounts:
+        - name: storage
+          mountPath: /var/www/html/storage
+      containers:
+      - name: laravel-app
+        image: your-registry/laravel-app:latest  # Replace with your image
+        ports:
+        - containerPort: 80
+          name: http
+        envFrom:
+        - configMapRef:
+            name: laravel-config
+        - secretRef:
+            name: laravel-secrets
+        volumeMounts:
+        - name: storage
+          mountPath: /var/www/html/storage
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 10
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: laravel-storage-pvc
+      securityContext:
+        fsGroup: 1000

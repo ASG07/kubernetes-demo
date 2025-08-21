@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: laravel-monitor
+  namespace: laravel-app
+  labels:
+    app: laravel-app
+    tier: frontend
+spec:
+  selector:
+    matchLabels:
+      app: laravel-app
+      tier: frontend
+  endpoints:
+  - port: http
+    path: /metrics  # Assumes you'll add metrics endpoint
+    interval: 30s
+    scrapeTimeout: 10s

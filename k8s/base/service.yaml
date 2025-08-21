@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: laravel-service
+  namespace: laravel-app
+  labels:
+    app: laravel-app
+    tier: frontend
+spec:
+  selector:
+    app: laravel-app
+    tier: frontend
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  type: ClusterIP
