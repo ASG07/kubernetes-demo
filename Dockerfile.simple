@@ -1,0 +1,39 @@
+# Simple Laravel Dockerfile
+FROM php:8.4-apache
+
+# Install PHP extensions
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libzip-dev \
+    zip \
+    unzip \
+    && docker-php-ext-install pdo_mysql gd zip \
+    && apt-get clean
+
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Copy application
+COPY . .
+
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage
+
+# Enable Apache rewrite
+RUN a2enmod rewrite
+
+# Configure Apache
+COPY docker/simple-apache.conf /etc/apache2/sites-available/000-default.conf
+
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s \
+    CMD curl -f http://localhost/health || exit 1
